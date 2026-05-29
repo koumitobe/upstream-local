@@ -160,6 +160,20 @@ textarea:focus{border-color:var(--accent)}
 /* ===== MEMO ===== */
 .memo-area{width:100%;min-height:110px;resize:vertical;border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;font-family:var(--font);color:var(--text);background:var(--surface2);line-height:1.6;outline:none;transition:border 0.15s}
 .memo-area:focus{border-color:var(--accent);background:var(--surface)}
+/* ===== SIDEBAR TABS ===== */
+.side-tabs{display:flex;gap:0;margin-bottom:12px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.side-tab-btn{flex:1;padding:7px 4px;font-size:11px;font-family:var(--mono);color:var(--text2);background:transparent;border:none;cursor:pointer;transition:all 0.15s;letter-spacing:0.03em}
+.side-tab-btn:hover{background:var(--surface2)}
+.side-tab-btn.active{background:var(--accent-bg);color:var(--accent);font-weight:700}
+.side-panel{display:none;flex-direction:column;gap:12px}
+.side-panel.active{display:flex}
+/* ===== REQUIREMENTS DOC ===== */
+.req-guide{background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:11px;font-family:var(--mono);color:var(--text2);line-height:1.8;margin-bottom:8px}
+.req-guide strong{color:var(--text);font-weight:700;display:block;margin-bottom:4px}
+.req-guide code{background:var(--surface);border:0.5px solid var(--border);border-radius:3px;padding:0 3px}
+.req-area{width:100%;min-height:320px;resize:vertical;border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:10px 12px;font-size:12.5px;font-family:var(--mono);color:var(--text);background:var(--surface);line-height:1.75;outline:none;transition:border 0.15s}
+.req-area:focus{border-color:var(--accent)}
+.req-char-count{font-size:10px;font-family:var(--mono);color:var(--text3);text-align:right;margin-top:4px}
 </style>
 </head>
 <body>
@@ -211,27 +225,54 @@ textarea:focus{border-color:var(--accent)}
       </div>
     </div>
     <div class="chat-side">
-      <div class="side-card">
-        <h3>リアルタイムスコア</h3>
-        <div class="score-item"><span class="score-label">課題特定</span><div class="score-bar"><div class="score-fill" id="sf1" style="width:0%"></div></div><span class="score-num" id="sn1">-</span></div>
-        <div class="score-item"><span class="score-label">要件品質</span><div class="score-bar"><div class="score-fill" id="sf2" style="width:0%"></div></div><span class="score-num" id="sn2">-</span></div>
-        <div class="score-item"><span class="score-label">橋渡し力</span><div class="score-bar"><div class="score-fill" id="sf3" style="width:0%"></div></div><span class="score-num" id="sn3">-</span></div>
-        <div class="score-item"><span class="score-label">スタンス</span><div class="score-bar"><div class="score-fill" id="sf4" style="width:0%"></div></div><span class="score-num" id="sn4">-</span></div>
+      <div class="side-tabs">
+        <button class="side-tab-btn active" id="tabInfo" onclick="switchSideTab('info')">情報・スコア</button>
+        <button class="side-tab-btn" id="tabReq" onclick="switchSideTab('req')">要件定義書</button>
       </div>
-      <div class="side-card">
-        <h3>セッション情報</h3>
-        <div class="context-item"><strong>シナリオ</strong><br><span id="sideScenario">-</span></div>
-        <div class="context-item"><strong>ターン数</strong><br><span id="sideTurns">0</span>往復</div>
-        <div class="context-item"><strong>経過時間</strong><br><span id="sideTimer">00:00</span></div>
+
+      <!-- パネル1: 情報・スコア -->
+      <div class="side-panel active" id="panelInfo">
+        <div class="side-card">
+          <h3>リアルタイムスコア</h3>
+          <div class="score-item"><span class="score-label">課題特定</span><div class="score-bar"><div class="score-fill" id="sf1" style="width:0%"></div></div><span class="score-num" id="sn1">-</span></div>
+          <div class="score-item"><span class="score-label">要件品質</span><div class="score-bar"><div class="score-fill" id="sf2" style="width:0%"></div></div><span class="score-num" id="sn2">-</span></div>
+          <div class="score-item"><span class="score-label">橋渡し力</span><div class="score-bar"><div class="score-fill" id="sf3" style="width:0%"></div></div><span class="score-num" id="sn3">-</span></div>
+          <div class="score-item"><span class="score-label">スタンス</span><div class="score-bar"><div class="score-fill" id="sf4" style="width:0%"></div></div><span class="score-num" id="sn4">-</span></div>
+        </div>
+        <div class="side-card">
+          <h3>セッション情報</h3>
+          <div class="context-item"><strong>シナリオ</strong><br><span id="sideScenario">-</span></div>
+          <div class="context-item"><strong>ターン数</strong><br><span id="sideTurns">0</span>往復</div>
+          <div class="context-item"><strong>経過時間</strong><br><span id="sideTimer">00:00</span></div>
+        </div>
+        <div class="side-card">
+          <h3>ヒント：引き出すべき情報</h3>
+          <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:8px">※採点後に正解が開示されます</div>
+          <div id="sideHints" style="font-size:12px;color:var(--text2);line-height:1.8"></div>
+        </div>
+        <div class="side-card">
+          <h3>メモ</h3>
+          <textarea class="memo-area" id="memoArea" placeholder="確認事項・仮説・気づきをメモ…" oninput="saveMemo()"></textarea>
+        </div>
       </div>
-      <div class="side-card">
-        <h3>ヒント：引き出すべき情報</h3>
-        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:8px">※採点後に正解が開示されます</div>
-        <div id="sideHints" style="font-size:12px;color:var(--text2);line-height:1.8"></div>
-      </div>
-      <div class="side-card">
-        <h3>メモ</h3>
-        <textarea class="memo-area" id="memoArea" placeholder="確認事項・仮説・気づきをメモ…" oninput="saveMemo()"></textarea>
+
+      <!-- パネル2: 要件定義書 -->
+      <div class="side-panel" id="panelReq">
+        <div class="side-card" style="flex:1">
+          <h3>要件定義書（マークダウン）</h3>
+          <div class="req-guide">
+            <strong>書き方ガイド</strong>
+            <code>#</code> タイトル（大見出し）<br>
+            <code>##</code> セクション（中見出し）<br>
+            <code>###</code> 小見出し<br>
+            <code>-</code> 箇条書き項目<br>
+            <code>  -</code> ネスト（2スペース＋-）<br>
+            <code>**文字**</code> 太字<br>
+            <code>1.</code> 番号付きリスト
+          </div>
+          <textarea class="req-area" id="reqDoc" oninput="saveReqDoc()"></textarea>
+          <div class="req-char-count" id="reqCharCount">0文字</div>
+        </div>
       </div>
     </div>
   </div>
@@ -402,6 +443,27 @@ function setupChat(sc) {
   turnCount = 0;
   updateScoreUI();
 
+  // 要件定義書：テンプレートをデフォルトテキストとしてセット
+  const reqTemplate = `# プロジェクトタイトル
+
+## 背景・課題
+-
+
+## 機能要件
+-
+
+## 非機能要件
+-
+
+## 制約条件
+-
+
+## 優先度・スコープ
+- `;
+  document.getElementById('reqDoc').value = reqTemplate;
+  document.getElementById('reqCharCount').textContent = reqTemplate.length + '文字';
+  switchSideTab('info');
+
   document.getElementById('messages').innerHTML = '';
 }
 
@@ -544,12 +606,14 @@ function confirmFinish() {
 async function finishSession() {
   if (!currentSession) return;
   clearInterval(timerInterval);
+  const reqDoc = getReqDoc();
   clearSessionFromStorage();
   document.getElementById('loadingOverlay').classList.add('open');
   try {
     const res = await fetch(API + `/api/session/${currentSession}/finish`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requirements_doc: reqDoc }),
     });
     const data = await res.json();
     document.getElementById('loadingOverlay').classList.remove('open');
@@ -567,9 +631,10 @@ async function finishSession() {
 function showEvalModal(ev) {
   const axes = [
     { key: 'issue_identification', label: '課題特定力', max: 30 },
-    { key: 'requirements_quality', label: '要件定義品質', max: 30 },
+    { key: 'requirements_quality', label: '要件定義品質（会話）', max: 30 },
     { key: 'ai_bridge', label: 'AIへの橋渡し力', max: 25 },
     { key: 'stance', label: 'スタンス発揮', max: 15 },
+    { key: 'requirements_doc', label: '要件定義書品質', max: 20 },
   ];
   document.getElementById('evalRows').innerHTML = axes.map(a => `
     <div class="eval-score-row">
@@ -580,7 +645,7 @@ function showEvalModal(ev) {
       <div class="eval-num">${ev.scores?.[a.key] ?? '-'}</div>
     </div>`).join('');
   const pass = ev.pass;
-  document.getElementById('evalTotal').textContent = (ev.total ?? '-') + '/100';
+  document.getElementById('evalTotal').textContent = (ev.total ?? '-') + '/120';
   document.getElementById('evalTotal').style.color = pass ? 'var(--success)' : 'var(--danger)';
   document.getElementById('evalImprove').innerHTML = '<strong>改善提案:</strong> ' + (ev.improvement || '');
   document.getElementById('evalModal').classList.add('open');
@@ -639,6 +704,7 @@ function clearSessionFromStorage() {
     localStorage.removeItem(`scores_${s.session_id}`);
     localStorage.removeItem(`phase_${s.session_id}`);
     localStorage.removeItem(`memo_${s.session_id}`);
+    localStorage.removeItem(`req_${s.session_id}`);
   }
   localStorage.removeItem(SESSION_KEY);
   updateActiveSessionTab(false);
@@ -695,6 +761,12 @@ async function restoreSession(saved) {
 
     // メモ復元
     document.getElementById('memoArea').value = localStorage.getItem(`memo_${saved.session_id}`) || '';
+    // 要件定義書復元（保存データがなければそのまま）
+    const savedReq = localStorage.getItem(`req_${saved.session_id}`);
+    if (savedReq !== null) {
+      document.getElementById('reqDoc').value = savedReq;
+      document.getElementById('reqCharCount').textContent = savedReq.length + '文字';
+    }
 
     showPage('chat', null);
     updateActiveSessionTab(true);
@@ -723,8 +795,8 @@ async function resetAllResults() {
     const activeId = active?.session_id;
     Object.keys(localStorage).forEach(key => {
       if (key === SESSION_KEY) return;
-      if (/^(scores_|phase_|memo_)/.test(key)) {
-        const id = key.replace(/^(scores_|phase_|memo_)/, '');
+      if (/^(scores_|phase_|memo_|req_)/.test(key)) {
+        const id = key.replace(/^(scores_|phase_|memo_|req_)/, '');
         if (id !== activeId) localStorage.removeItem(key);
       }
     });
@@ -739,6 +811,30 @@ async function resetAllResults() {
   } catch (e) {
     alert('リセットに失敗しました: ' + e.message);
   }
+}
+
+// ===== サイドバータブ切替 =====
+function switchSideTab(tab) {
+  document.getElementById('panelInfo').classList.toggle('active', tab === 'info');
+  document.getElementById('panelReq').classList.toggle('active', tab === 'req');
+  document.getElementById('tabInfo').classList.toggle('active', tab === 'info');
+  document.getElementById('tabReq').classList.toggle('active', tab === 'req');
+}
+
+// ===== 要件定義書 =====
+let reqSaveTimer = null;
+function saveReqDoc() {
+  if (!currentSession) return;
+  const val = document.getElementById('reqDoc').value;
+  document.getElementById('reqCharCount').textContent = val.length + '文字';
+  clearTimeout(reqSaveTimer);
+  reqSaveTimer = setTimeout(() => {
+    localStorage.setItem(`req_${currentSession}`, val);
+  }, 500);
+}
+
+function getReqDoc() {
+  return document.getElementById('reqDoc')?.value || '';
 }
 
 // ===== メモ =====

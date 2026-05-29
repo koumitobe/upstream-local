@@ -121,11 +121,13 @@ ${historyText || '（会話開始）'}
 // セッション終了 + AI採点
 app.post('/api/session/:session_id/finish', async (req, res) => {
   const { session_id } = req.params;
+  const { requirements_doc } = req.body;
   const sessionPath = path.join(SESSIONS_DIR, `${session_id}.json`);
   if (!fs.existsSync(sessionPath)) return res.status(404).json({ error: 'セッションが見つかりません' });
   const session = JSON.parse(fs.readFileSync(sessionPath, 'utf-8'));
   session.status = 'finished';
   session.finished_at = new Date().toISOString();
+  session.requirements_doc = requirements_doc || '';
   const scenario = loadScenarios().find(s => s.id === session.scenario_id);
 
   const conversationLog = session.messages
@@ -133,6 +135,10 @@ app.post('/api/session/:session_id/finish', async (req, res) => {
     .join('\n\n');
 
   const rubric = fs.readFileSync('./rubrics/upstream_eval_rubric.md', 'utf-8');
+
+  const reqDocSection = requirements_doc
+    ? `\n## 提出された要件定義書\n${requirements_doc}`
+    : '\n## 提出された要件定義書\n（未記入）';
 
   const evalPrompt = `${rubric}
 
@@ -147,11 +153,12 @@ app.post('/api/session/:session_id/finish', async (req, res) => {
 
 ## 会話ログ
 ${conversationLog}
+${reqDocSection}
 
 ## 出力指示
 以下のJSONのみを返してください。前置き・説明・コードブロック記号は不要です。
 
-{"scores":{"issue_identification":0,"requirements_quality":0,"ai_bridge":0,"stance":0},"total":0,"pass":false,"cutoff_failed":[],"feedback":{"issue_identification":"","requirements_quality":"","ai_bridge":"","stance":""},"improvement":""}`;
+{"scores":{"issue_identification":0,"requirements_quality":0,"ai_bridge":0,"stance":0,"requirements_doc":0},"total":0,"pass":false,"cutoff_failed":[],"feedback":{"issue_identification":"","requirements_quality":"","ai_bridge":"","stance":"","requirements_doc":""},"improvement":""}`;
 
   try {
     const rawReply = await callClaude(evalPrompt, { timeout: 90000 });
@@ -178,6 +185,7 @@ ${conversationLog}
       duration_minutes: Math.round((new Date(session.finished_at) - new Date(session.started_at)) / 60000),
       turn_count: Math.floor(session.messages.length / 2),
       eval: evalResult, conversation_log: session.messages,
+      requirements_doc: session.requirements_doc || '',
     };
 
     const resultPath = path.join(RESULTS_DIR, `${session_id}.json`);
@@ -273,9 +281,10 @@ function generateHtmlReport(record, scenario) {
   const passBg = e.pass ? '#edf7f2' : '#fef0ee';
   const axes = [
     { key: 'issue_identification', label: '課題特定力', max: 30 },
-    { key: 'requirements_quality', label: '要件定義品質', max: 30 },
+    { key: 'requirements_quality', label: '要件定義品質（会話）', max: 30 },
     { key: 'ai_bridge', label: 'AIへの橋渡し力', max: 25 },
     { key: 'stance', label: 'スタンス発揮', max: 15 },
+    { key: 'requirements_doc', label: '要件定義書品質', max: 20 },
   ];
   const axisRows = axes.map(a => {
     const score = scores[a.key] || 0;
@@ -314,7 +323,7 @@ function generateHtmlReport(record, scenario) {
   </table></div>
   <div class="card"><h2>総合結果</h2>
     <div style="display:flex;align-items:center;gap:20px;margin-bottom:16px">
-      <div style="font-size:52px;font-weight:700;font-family:monospace;color:${passColor}">${total}<span style="font-size:20px;color:#9c9890">/100</span></div>
+      <div style="font-size:52px;font-weight:700;font-family:monospace;color:${passColor}">${total}<span style="font-size:20px;color:#9c9890">/120</span></div>
       <div><div style="display:inline-block;padding:4px 14px;border-radius:20px;font-size:15px;font-weight:700;background:${passBg};color:${passColor};margin-bottom:6px">${e.pass ? '合格' : '不合格'}</div>
       ${e.cutoff_failed?.length > 0 ? `<div style="font-size:12px;color:#c43a1a">足切り: ${e.cutoff_failed.join(', ')}</div>` : ''}</div>
     </div>
@@ -324,6 +333,7 @@ function generateHtmlReport(record, scenario) {
     <thead><tr style="font-size:12px;color:#9c9890"><th style="text-align:left;padding:6px 8px;font-weight:500">評価軸</th><th style="padding:6px 8px;font-weight:500">スコア</th><th style="padding:6px 8px;font-weight:500">達成率</th><th style="text-align:left;padding:6px 8px;font-weight:500">コメント</th></tr></thead>
     <tbody>${axisRows}</tbody>
   </table></div>
+  <div class="card"><h2>提出された要件定義書</h2><pre style="white-space:pre-wrap;word-break:break-word;font-size:13px;line-height:1.75;color:#1a1916;background:#f7f6f2;border-radius:8px;padding:16px;overflow-x:auto">${esc(record.requirements_doc || '（未記入）')}</pre></div>
   <div class="card"><h2>会話ログ</h2><div style="max-height:600px;overflow-y:auto;padding:4px">${convHtml}</div></div>
 </div></body></html>`;
 }
