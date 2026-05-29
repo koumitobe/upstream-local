@@ -194,6 +194,38 @@ ${conversationLog}
   }
 });
 
+// 結果・セッションデータ全削除（進行中セッションは除外）
+app.delete('/api/results', (req, res) => {
+  const sessionFiles = fs.readdirSync(SESSIONS_DIR).filter(f => f.endsWith('.json'));
+
+  const activeSessions = new Set();
+  sessionFiles.forEach(f => {
+    try {
+      const s = JSON.parse(fs.readFileSync(path.join(SESSIONS_DIR, f), 'utf-8'));
+      if (s.status === 'active') activeSessions.add(s.session_id);
+    } catch (_) {}
+  });
+
+  let deleted = 0;
+  sessionFiles.forEach(f => {
+    const id = f.replace('.json', '');
+    if (!activeSessions.has(id)) {
+      fs.unlinkSync(path.join(SESSIONS_DIR, f));
+      deleted++;
+    }
+  });
+
+  fs.readdirSync(RESULTS_DIR).forEach(f => {
+    const id = f.replace(/\.(json|html)$/, '');
+    if (!activeSessions.has(id)) {
+      fs.unlinkSync(path.join(RESULTS_DIR, f));
+      deleted++;
+    }
+  });
+
+  res.json({ deleted, active_sessions_kept: activeSessions.size });
+});
+
 // セッション取得（画面復元用）
 app.get('/api/session/:session_id', (req, res) => {
   const p = path.join(SESSIONS_DIR, `${req.params.session_id}.json`);

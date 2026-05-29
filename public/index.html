@@ -114,6 +114,8 @@ textarea:focus{border-color:var(--accent)}
 .results-header h1{font-size:20px;font-weight:700}
 .refresh-btn{padding:7px 14px;border-radius:var(--radius-sm);border:0.5px solid var(--border2);background:var(--surface);color:var(--text2);font-size:12px;cursor:pointer;font-family:var(--font)}
 .refresh-btn:hover{border-color:var(--accent);color:var(--accent)}
+.reset-btn{padding:7px 14px;border-radius:var(--radius-sm);border:0.5px solid var(--danger);background:var(--surface);color:var(--danger);font-size:12px;cursor:pointer;font-family:var(--font)}
+.reset-btn:hover{background:var(--danger-bg)}
 .results-table{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;overflow:hidden}
 .results-table table{width:100%;border-collapse:collapse;font-size:13px}
 .results-table th{padding:10px 14px;text-align:left;font-size:11px;font-family:var(--mono);color:var(--text3);background:var(--surface2);border-bottom:0.5px solid var(--border);font-weight:500}
@@ -239,7 +241,10 @@ textarea:focus{border-color:var(--accent)}
 <div id="page-results" class="page">
   <div class="results-header">
     <h1>採点結果一覧</h1>
-    <button class="refresh-btn" onclick="loadResults()">更新</button>
+    <div style="display:flex;gap:8px">
+      <button class="refresh-btn" onclick="loadResults()">更新</button>
+      <button class="reset-btn" onclick="resetAllResults()">結果をリセット</button>
+    </div>
   </div>
   <div class="results-table">
     <table>
@@ -698,6 +703,41 @@ async function restoreSession(saved) {
   } catch (e) {
     console.error('セッション復元エラー:', e);
     clearSessionFromStorage();
+  }
+}
+
+// ===== 結果リセット =====
+async function resetAllResults() {
+  if (!confirm(
+    '全ての採点結果とセッションデータを削除します。\n' +
+    '進行中の試験は除外されます。\n\n' +
+    'この操作は取り消せません。続けますか？'
+  )) return;
+
+  try {
+    const res = await fetch(API + '/api/results', { method: 'DELETE' });
+    const data = await res.json();
+
+    // 進行中セッション以外のlocalStorageをクリア
+    const active = getSavedSession();
+    const activeId = active?.session_id;
+    Object.keys(localStorage).forEach(key => {
+      if (key === SESSION_KEY) return;
+      if (/^(scores_|phase_|memo_)/.test(key)) {
+        const id = key.replace(/^(scores_|phase_|memo_)/, '');
+        if (id !== activeId) localStorage.removeItem(key);
+      }
+    });
+
+    loadResults();
+
+    let msg = `${data.deleted} 件のデータを削除しました。`;
+    if (data.active_sessions_kept > 0) {
+      msg += `\n（進行中の試験 ${data.active_sessions_kept} 件は保持されました）`;
+    }
+    alert(msg);
+  } catch (e) {
+    alert('リセットに失敗しました: ' + e.message);
   }
 }
 
