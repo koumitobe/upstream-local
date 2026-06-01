@@ -133,6 +133,85 @@ npm start
 
 ---
 
+## シナリオを追加する
+
+`scenarios/` ディレクトリに JSON ファイルを置くだけで、サーバーコードの変更なしに追加できます。
+
+### 手順
+
+**1. ファイルを作成する**
+
+ファイル名は `scenario_04_xxxxx.json` のように連番形式にしてください（ファイル名の昇順で一覧に表示されます）。
+
+```bash
+touch scenarios/scenario_04_retail.json
+```
+
+**2. JSON の内容を記述する**
+
+以下のテンプレートをコピーして編集してください。
+
+```json
+{
+  "id": "scenario_04",
+  "metadata": {
+    "label": "SCENARIO 04",
+    "title": "シナリオのタイトル",
+    "difficulty": "easy",
+    "estimated_time_minutes": 30,
+    "target_rank": "US認定"
+  },
+  "customer": {
+    "name": "顧客氏名",
+    "company": "会社名",
+    "role": "役職",
+    "age_range": "40代",
+    "initials": "顧"
+  },
+  "persona": {
+    "personality": ["性格の特徴1", "性格の特徴2"],
+    "todays_situation": "今日の状況説明"
+  },
+  "hidden_context": {
+    "real_problem": "顧客の本質課題（受験者には見えない）",
+    "budget": "予算感",
+    "constraints": ["制約1", "制約2"],
+    "blocker": "意思決定のブロッカー"
+  },
+  "opening_message": "最初に顧客AIが送るメッセージ",
+  "hint_questions": ["ヒント質問1", "ヒント質問2"],
+  "eval_criteria": {
+    "issue_identification": "採点観点①：課題特定",
+    "requirements_quality": "採点観点②：要件品質",
+    "ai_bridge": "採点観点③：橋渡し力",
+    "stance": "採点観点④：スタンス"
+  },
+  "system_prompt": "あなたは「顧客氏名」を演じてください。（以下、ペルソナ設定）"
+}
+```
+
+**3. サーバーを再起動する**
+
+```bash
+# Ctrl+C で停止してから
+npm start
+```
+
+再起動後、シナリオ選択画面に自動で追加されます。
+
+### 各フィールドの説明
+
+| フィールド | 説明 |
+|---|---|
+| `id` | 他のシナリオと重複しない一意のID |
+| `metadata.difficulty` | `"easy"` / `"medium"` / `"hard"` のいずれか |
+| `customer.initials` | チャット画面のアバターに表示される1文字 |
+| `hidden_context` | 採点時にAIへ渡される正解情報。受験者には表示されない |
+| `eval_criteria` | 採点プロンプトに直接使われる4軸の評価観点 |
+| `system_prompt` | 顧客AIへの演技指示。詳細なほどリアルな顧客を再現できる |
+
+---
+
 ## 採点結果の確認
 
 試験終了後、以下の方法で結果を確認できます：
